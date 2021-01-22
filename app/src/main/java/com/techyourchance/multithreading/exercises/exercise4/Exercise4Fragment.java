@@ -42,7 +42,7 @@ public class Exercise4Fragment extends BaseFragment {
 
     private int mNumberOfThreads; //safe
     private ComputationRange[] mThreadsComputationRanges; //safe
-    private volatile BigInteger[] mThreadsComputationResults; //safe
+    private BigInteger[] mThreadsComputationResults; //safe
     private final AtomicInteger mNumOfFinishedThreads = new AtomicInteger(0); //safe
 
     private long mComputationTimeoutTime; //safe
