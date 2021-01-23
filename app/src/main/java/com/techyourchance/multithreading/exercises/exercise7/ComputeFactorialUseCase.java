@@ -1,11 +1,11 @@
 package com.techyourchance.multithreading.exercises.exercise7;
 
 import android.os.Handler;
-import android.os.Looper;
 
 import com.techyourchance.multithreading.common.BaseObservable;
 
 import java.math.BigInteger;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import androidx.annotation.WorkerThread;
 
@@ -19,7 +19,8 @@ public class ComputeFactorialUseCase extends BaseObservable<ComputeFactorialUseC
 
     private final Object LOCK = new Object();
 
-    private final Handler mUiHandler = new Handler(Looper.getMainLooper());
+    private final Handler mUiHandler;
+    private final ThreadPoolExecutor mThreadPool;
 
     private int mNumberOfThreads;
     private ComputationRange[] mThreadsComputationRanges;
@@ -29,6 +30,11 @@ public class ComputeFactorialUseCase extends BaseObservable<ComputeFactorialUseC
     private long mComputationTimeoutTime;
 
     private boolean mAbortComputation;
+
+    public ComputeFactorialUseCase(Handler uiHandler, ThreadPoolExecutor threadPool) {
+        this.mUiHandler = uiHandler;
+        this.mThreadPool = threadPool;
+    }
 
     @Override
     protected void onLastListenerUnregistered() {
@@ -40,12 +46,12 @@ public class ComputeFactorialUseCase extends BaseObservable<ComputeFactorialUseC
     }
 
     public void computeFactorialAndNotify(final int argument, final int timeout) {
-        new Thread(() -> {
+        mThreadPool.execute(() -> {
             initComputationParams(argument, timeout);
             startComputation();
             waitForThreadsResultsOrTimeoutOrAbort();
             processComputationResults();
-        }).start();
+        });
     }
 
     private void initComputationParams(int factorialArgument, int timeout) {
@@ -88,7 +94,7 @@ public class ComputeFactorialUseCase extends BaseObservable<ComputeFactorialUseC
 
             final int threadIndex = i;
 
-            new Thread(() -> {
+            mThreadPool.execute(() -> {
                 long rangeStart = mThreadsComputationRanges[threadIndex].start;
                 long rangeEnd = mThreadsComputationRanges[threadIndex].end;
                 BigInteger product = new BigInteger("1");
@@ -105,7 +111,7 @@ public class ComputeFactorialUseCase extends BaseObservable<ComputeFactorialUseC
                     LOCK.notifyAll();
                 }
 
-            }).start();
+            });
         }
     }
 

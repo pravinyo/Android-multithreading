@@ -11,6 +11,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.techyourchance.multithreading.DefaultConfiguration;
+import com.techyourchance.multithreading.MyApplication;
 import com.techyourchance.multithreading.R;
 import com.techyourchance.multithreading.common.BaseFragment;
 
@@ -26,7 +27,7 @@ public class Exercise7Fragment extends BaseFragment implements ComputeFactorialU
         return new Exercise7Fragment();
     }
 
-    private static int MAX_TIMEOUT_MS = DefaultConfiguration.DEFAULT_FACTORIAL_TIMEOUT_MS;
+    private static final int MAX_TIMEOUT_MS = DefaultConfiguration.DEFAULT_FACTORIAL_TIMEOUT_MS;
 
     private EditText mEdtArgument;
     private EditText mEdtTimeout;
@@ -38,7 +39,10 @@ public class Exercise7Fragment extends BaseFragment implements ComputeFactorialU
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mComputeFactorialUseCase = new ComputeFactorialUseCase();
+
+        mComputeFactorialUseCase = new ComputeFactorialUseCase(
+                getCompositionRoot().getUiHandler(),
+                getCompositionRoot().getThreadPool());
     }
 
     @Nullable
