@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Android Multithreading</string>
+    <string name="timeout">Computation timed out</string>
+    <string name="abort">Computation aborted</string>
 </resources>

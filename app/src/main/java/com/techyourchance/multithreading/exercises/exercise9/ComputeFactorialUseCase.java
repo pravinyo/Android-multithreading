@@ -9,6 +9,8 @@ import java.math.BigInteger;
 
 import androidx.annotation.WorkerThread;
 
+import io.reactivex.Observable;
+
 public class ComputeFactorialUseCase extends BaseObservable<ComputeFactorialUseCase.Listener> {
 
     public interface Listener {
@@ -39,13 +41,13 @@ public class ComputeFactorialUseCase extends BaseObservable<ComputeFactorialUseC
         }
     }
 
-    public void computeFactorialAndNotify(final int argument, final int timeout) {
-        new Thread(() -> {
+    public Observable<BigInteger> computeFactorialAndNotify(final int argument, final int timeout) {
+        return Observable.fromCallable(() -> {
             initComputationParams(argument, timeout);
             startComputation();
             waitForThreadsResultsOrTimeoutOrAbort();
-            processComputationResults();
-        }).start();
+            return processComputationResults();
+        });
     }
 
     private void initComputationParams(int factorialArgument, int timeout) {
@@ -123,10 +125,10 @@ public class ComputeFactorialUseCase extends BaseObservable<ComputeFactorialUseC
     }
 
     @WorkerThread
-    private void processComputationResults() {
+    private BigInteger processComputationResults() {
         if (mAbortComputation) {
             notifyAborted();
-            return;
+            return new BigInteger("-1");
         }
 
         BigInteger result = computeFinalResult();
@@ -134,10 +136,10 @@ public class ComputeFactorialUseCase extends BaseObservable<ComputeFactorialUseC
         // need to check for timeout after computation of the final result
         if (isTimedOut()) {
             notifyTimeout();
-            return;
+            return new BigInteger("-2");
         }
 
-        notifySuccess(result);
+        return result;
     }
 
     @WorkerThread
@@ -158,14 +160,6 @@ public class ComputeFactorialUseCase extends BaseObservable<ComputeFactorialUseC
 
     private boolean isTimedOut() {
         return System.currentTimeMillis() >= mComputationTimeoutTime;
-    }
-
-    private void notifySuccess(final BigInteger result) {
-        mUiHandler.post(() -> {
-            for (Listener listener : getListeners()) {
-                listener.onFactorialComputed(result);
-            }
-        });
     }
 
     private void notifyAborted() {
