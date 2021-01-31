@@ -1,5 +1,6 @@
 package com.techyourchance.multithreading.exercises.exercise10
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -16,8 +17,12 @@ import com.techyourchance.multithreading.common.BaseFragment
 import java.math.BigInteger
 import androidx.fragment.app.Fragment
 import com.techyourchance.multithreading.DefaultConfiguration
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
-class Exercise10Fragment : BaseFragment(), ComputeFactorialUseCase.Listener {
+class Exercise10Fragment : BaseFragment() {
 
     private lateinit var edtArgument: EditText
     private lateinit var edtTimeout: EditText
@@ -25,6 +30,7 @@ class Exercise10Fragment : BaseFragment(), ComputeFactorialUseCase.Listener {
     private lateinit var txtResult: TextView
 
     private lateinit var computeFactorialUseCase: ComputeFactorialUseCase
+    private var job: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,20 +61,20 @@ class Exercise10Fragment : BaseFragment(), ComputeFactorialUseCase.Listener {
 
             val argument = Integer.valueOf(edtArgument.text.toString())
 
-            computeFactorialUseCase.computeFactorialAndNotify(argument, getTimeout())
+            job = CoroutineScope(Dispatchers.Main).launch {
+                when(val result = computeFactorialUseCase.computeFactorial(argument, getTimeout())){
+                    is ComputeFactorialUseCase.Result.Success -> onFactorialComputed(result.result)
+                    is ComputeFactorialUseCase.Result.Timeout -> onFactorialComputationTimedOut()
+                }
+            }
         }
 
         return view
     }
 
-    override fun onStart() {
-        super.onStart()
-        computeFactorialUseCase.registerListener(this)
-    }
-
     override fun onStop() {
         super.onStop()
-        computeFactorialUseCase.unregisterListener(this)
+        job?.apply { cancel() }
 
     }
 
@@ -76,18 +82,19 @@ class Exercise10Fragment : BaseFragment(), ComputeFactorialUseCase.Listener {
         return "Exercise 10"
     }
 
-    override fun onFactorialComputed(result: BigInteger) {
+    @SuppressLint("SetTextI18n")
+    fun onFactorialComputed(result: BigInteger) {
         txtResult.text = result.toString()
         btnStartWork.isEnabled = true
     }
 
-    override fun onFactorialComputationTimedOut() {
-        txtResult.text = "Computation timed out"
+    fun onFactorialComputationTimedOut() {
+        txtResult.text = getString(R.string.timeout)
         btnStartWork.isEnabled = true
     }
 
-    override fun onFactorialComputationAborted() {
-        txtResult.text = "Computation aborted"
+    fun onFactorialComputationAborted() {
+        txtResult.text = getString(R.string.abort)
         btnStartWork.isEnabled = true
     }
 
